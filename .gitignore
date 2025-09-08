@@ -1,1 +1,6 @@
 .DS_Store
+
+# large binaries
+ollama/stt2/ffmpeg/
+*.exe
+*.7z
