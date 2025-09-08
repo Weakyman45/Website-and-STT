@@ -4,3 +4,8 @@
 ollama/stt2/ffmpeg/
 *.exe
 *.7z
+
+# large binaries
+ollama/stt2/ffmpeg/
+*.exe
+*.7z
