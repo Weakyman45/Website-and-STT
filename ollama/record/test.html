@@ -1,0 +1,422 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<title reclang="XvFp">Recorder H5 QuickStart: 快速入门</title>
+<script>var PageLM="2024-05-07 18:33";</script>
+<!--
+你可以直接将 QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
+You can directly copy the QuickStart.html file to your (https) website, and you can start testing normally without other files.
+-->
+
+</head>
+
+<body>
+<!--
+【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入
+
+另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
+-->
+
+<!-- 【1.1】引入核心文件  Import core file -->
+<script src="./src/recorder-core.js"></script>
+
+<!-- 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. -->
+<script src="./src/engine/mp3.js"></script>
+<script src="./src/engine/mp3-engine.js"></script>
+
+<!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入。  Import optional extended support items. If you do not need these extended functions, you do not need to import them. -->
+<script src="./src/extensions/frequency.histogram.view.js"></script>
+<script src="./src/extensions/lib.fft.js"></script>
+
+
+<script>var bEL=document.querySelector("base");if(bEL)bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</script>
+
+
+<!-- 【2】构建界面  Build the web interface  -->
+<div class="main">
+
+
+	<div class="mainBox">
+		<!-- 按钮控制区域  Control button area -->
+		<div class="pd btns">
+			<div>
+				<button onclick="recOpen()" style="margin-right:10px" reclang="2KqN">打开录音,请求权限</button>
+				<button onclick="recClose()" style="margin-right:0" reclang="E0NB">关闭录音,释放资源</button>
+			</div>
+
+			<button onclick="recStart()" reclang="nlQN">录制</button>
+			<button onclick="recStop()" style="margin-right:80px" reclang="cEa1">停止</button>
+
+			<span style="display: inline-block;">
+				<button onclick="recPause()" reclang="wQFS">暂停</button>
+				<button onclick="recResume()" reclang="hHDO">继续</button>
+			</span>
+			<span style="display: inline-block;">
+				<button onclick="recPlay()" reclang="0TJm">播放</button>
+				<button onclick="recUpload()" reclang="DOAp">上传</button>
+				<button onclick="recLocalDown()" reclang="GTE7">本地下载</button>
+			</span>
+		</div>
+
+		<!-- 波形绘制区域  Waveform drawing area -->
+		<div style="padding-top:5px">
+			<div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom"><div style="height:100px;width:300px;" class="recwave"></div></div>
+
+			<div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
+				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 日志输出区域  Log output area -->
+	<div class="mainBox">
+		<div class="reclog"></div>
+	</div>
+</div>
+
+
+<!-- 【3】实现录音逻辑  Implement recording logic -->
+<script>
+var rec,wave,recBlob;
+/**调用open打开录音请求好录音权限  Call open to open the recording and request the recording permission**/
+var recOpen=function(){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
+	rec=null;
+	wave=null;
+	recBlob=null;
+	var newRec=Recorder({
+		type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
+			//录音实时回调，大约1秒调用12次本回调
+			document.querySelector(".recpowerx").style.width=powerLevel+"%";
+			document.querySelector(".recpowert").innerText=formatMs(bufferDuration,1)+" / "+powerLevel;
+
+			//可视化图形绘制
+			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+		}
+	});
+
+	newRec.open(function(){//打开麦克风授权获得相关资源
+		rec=newRec;
+
+		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
+		wave=Recorder.FrequencyHistogramView({elem:".recwave"});
+
+		reclog(Html_$T("GVCa::已打开录音，可以点击录制开始录音了"),2);
+	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+		reclog((isUserNotAllow?"UserNotAllow, ":"")+Html_$T("TOOV::打开录音失败：")+msg,1);
+	});
+};
+
+
+
+/**关闭录音，释放资源  Close recording, release resources**/
+function recClose(){
+	if(rec){
+		rec.close();
+		reclog(Html_$T("jqOs::已关闭"));
+	}else{
+		reclog(Html_$T("VOOw::未打开录音"),1);
+	};
+};
+
+/**开始录音  Start recording**/
+function recStart(){//打开了录音后才能进行start、stop调用
+	if(rec&&Recorder.IsOpen()){
+		recBlob=null;
+		rec.start();
+		reclog(Html_$T("CGdy::已开始录音...")+" "+rec.set.type+" "+rec.set.sampleRate+" "+rec.set.bitRate+"kbps");
+	}else{
+		reclog(Html_$T("ajKR::未打开录音"),1);
+	};
+};
+
+/**暂停录音  Passing recording**/
+function recPause(){
+	if(rec&&Recorder.IsOpen()){
+		rec.pause();
+		reclog(Html_$T("GvCy::已暂停"));
+	}else{
+		reclog(Html_$T("gCAR::未打开录音"),1);
+	};
+};
+/**恢复录音  Resume recording**/
+function recResume(){
+	if(rec&&Recorder.IsOpen()){
+		rec.resume();
+		reclog(Html_$T("5q1K::继续录音中..."));
+	}else{
+		reclog(Html_$T("Ob6S::未打开录音"),1);
+	};
+};
+
+/**结束录音，得到音频文件  Stop recording and get audio files**/
+function recStop(){
+	if(!(rec&&Recorder.IsOpen())){
+		reclog(Html_$T("5JuL::未打开录音"),1);
+		return;
+	};
+	rec.stop(function(blob,duration){
+		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),Html_xT(Html_$T("gOix::时长:{1}ms",0,duration)));
+
+		recBlob=blob;
+		reclog(Html_$T("0LHf::已录制mp3：{1}ms {2}字节，可以点击播放、上传、本地下载了",0,formatMs(duration),blob.size),2);
+	},function(msg){
+		reclog(Html_$T("kGZO::录音失败:")+msg,1);
+	});
+};
+
+
+/**播放  Play**/
+function recPlay(){
+	if(!recBlob){
+		reclog(Html_$T("tIke::请先录音，然后停止后再播放"),1);
+		return;
+	};
+	var cls=("a"+Math.random()).replace(".","");
+	reclog(Html_$T('GlWb::播放中: ')+'<span class="'+cls+'"></span>');
+	var audio=document.createElement("audio");
+	audio.controls=true;
+	document.querySelector("."+cls).appendChild(audio);
+	//简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
+	audio.src=(window.URL||webkitURL).createObjectURL(recBlob);
+	audio.play();
+
+	setTimeout(function(){
+		(window.URL||webkitURL).revokeObjectURL(audio.src);
+	},5000);
+};
+
+
+function recUpload(){
+            var blob=recBlob;
+            if(!blob){
+                reclog("请先录音，然后停止后再上传",1);
+                return;
+            };
+
+            // 将音频文件上传到后端进行语音识别
+            var formData = new FormData();
+            formData.append('audio', blob, 'audio.wav');
+
+            fetch('http://localhost:5000/recognize', { // 后端 Flask API 地址
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('recognized-text').innerText = data.recognized_text;
+                reclog("识别结果: " + data.recognized_text, 2); // 显示识别结果
+            })
+            .catch(error => {
+                reclog("上传失败: " + error.message, 1);
+            });
+        };
+
+/**本地下载  Local download**/
+function recLocalDown(){
+	if(!recBlob){
+		reclog(Html_$T("M86h::请先录音，然后停止后再下载"),1);
+		return;
+	};
+	var cls=("a"+Math.random()).replace(".","");
+	recdown64.lastCls=cls;
+	reclog(Html_$T('vJPl::点击 ')+'<span class="'+cls+'"></span>'+Html_$T('Whtc:: 下载，或复制文本')
+		+'<button onclick="recdown64(\''+cls+'\')">'+Html_$T('XK4l::生成Base64文本')+'</button><span class="'+cls+'_b64"></span>');
+
+	var fileName="recorder-"+Date.now()+".mp3";
+	var downA=document.createElement("A");
+	downA.innerHTML=Html_$T("g8Fy::下载 ")+fileName;
+	downA.href=(window.URL||webkitURL).createObjectURL(recBlob);
+	downA.download=fileName;
+	document.querySelector("."+cls).appendChild(downA);
+	if(/mobile/i.test(navigator.userAgent)){
+		alert(Html_xT(Html_$T("DIEK::因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载")));
+	}else{
+		downA.click();
+	}
+
+	//不用了时需要revokeObjectURL，否则霸占内存
+	//(window.URL||webkitURL).revokeObjectURL(downA.href);
+};
+function recdown64(cls){
+	var el=document.querySelector("."+cls+"_b64");
+	if(recdown64.lastCls!=cls){
+		el.innerHTML='<span style="color:red">'+Html_$T("eKKx::老的数据没有保存，只支持最新的一条")+'</span>';
+		return;
+	}
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		el.innerHTML='<textarea></textarea>';
+		el.querySelector("textarea").value=reader.result;
+	};
+	reader.readAsDataURL(recBlob);
+};
+
+
+var formatMs=function(ms,all){
+	var ss=ms%1000;ms=(ms-ss)/1000;
+	var s=ms%60;ms=(ms-s)/60;
+	var m=ms%60;ms=(ms-m)/60;
+	var h=ms;
+	var t=(h?h+":":"")
+		+(all||h+m?("0"+m).substr(-2)+":":"")
+		+(all||h+m+s?("0"+s).substr(-2)+"″":"")
+		+("00"+ss).substr(-3);
+	return t;
+};
+</script>
+
+
+<!--以下这坨可以忽略  The following can be ignored-->
+<script>
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	var div=document.createElement("div");
+	var elem=document.querySelector(".reclog");
+	elem.insertBefore(div,elem.firstChild);
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+};
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||Html_$T("kBaF::不能获得错误堆栈"))+'</pre></span>');
+};
+
+if(!window.Html_$T){//没有提供本页面用的国际化多语言支持时 返回中文文本
+	window.Html_$T=function(){
+		var a=arguments,txt=a[0].replace(/^.+?::/,""),n=0;
+		for(var i=0;i<a.length;i++){ if(typeof a[i]=="number"){ n=i;break } }
+		txt=txt.replace(/\{(\d+)\}/g,function(v,f){ v=a[+f+n]; return v==null?"":v });
+		return txt;
+	}
+	window.Html_xT=function(v){ return v }
+}
+
+// reclog(Html_$T('9Jy2::Recorder库修改时间（有可能修改了忘改）：')+(window.Recorder&&Recorder.LM),"#999");
+// reclog("UA: "+navigator.userAgent, "#999");
+// reclog("URL: "+location.href.replace(/#.*/g,""), "#999");
+// reclog(Html_$T('7gIC::你可以直接将 ')+'<a target="_blank" href="https://github.com/xiangyuecn/Recorder/blob/master/QuickStart.html">/QuickStart.html</a>'+Html_$T('s731:: 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了；相比 Recorder H5 (/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习')+unescape("%uD83D%uDE04"));
+reclog(Html_$T('ERsK::当前浏览器')+'<span style="color:'+(Recorder.Support()?'#0b1">'+Html_$T('7tuo::支持录音'):'red">'+Html_$T('8Z8O::不支持录音'))+'</span>');
+
+if(window.Recorder){
+	reclog(Html_$T('BL9u::页面已准备好，请先点击打开录音，然后点击录制'),2);
+}else{
+	reclog(Html_$T("YzPd::js文件加载失败，请刷新重试！"),"#f00;font-size:50px");
+}
+</script>
+
+<script>
+//修改a链接的url
+var els=document.querySelectorAll(".topLinks a");
+for(var i=0;i<els.length;i++){
+	var el=els[i],v=el.getAttribute("href")||"";
+	if(/\.io\/Recorder\/(.*)/i.test(v)){
+		el.setAttribute("href", GitPageBase+RegExp.$1);
+	}
+}
+
+if(/mobile/i.test(navigator.userAgent)){
+	//移动端加载控制台组件
+	var elem=document.createElement("script");
+	elem.setAttribute("type","text/javascript");
+	elem.setAttribute("src",GitPageBase+"assets/ztest-vconsole.js");
+	document.body.appendChild(elem);
+	elem.onload=function(){
+		new VConsole();
+	};
+};
+</script>
+
+<!-- 加载打赏挂件 -->
+<script>
+var donateView=document.createElement("div");
+document.querySelector(".reclog").appendChild(donateView);
+
+</script>
+
+<!-- 启用国际化多语言支持 -->
+<script>
+if(window.PageI18nWidget){
+PageI18nWidget({
+	elem:".i18nBox", rootUrl:GitPageBase
+	,titleKey:"XvFp"
+	,langs:{
+		"en-US":{urls:[ "#QuickStart_html/en-US.js","#widget_donate/en-US.js" ]}
+	}
+});
+};
+</script>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+	background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.btns button:active{
+	background: #f00;
+}
+
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+</style>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+torch==2.2.2
+flask
+requests
+gevent
+faster-whisper
+fsspec

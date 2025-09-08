@@ -1,0 +1,26 @@
+2024-08-28 13:52:37,421 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:53:39,228 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:53:50,342 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:53:58,627 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:55:00,434 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:56:14,358 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:56:39,249 - start - ERROR - [upload]error: [Errno 2] No such file or directory: 'ffmpeg'
+2024-08-28 13:56:52,847 - start - ERROR - Exception on /process [POST]
+Traceback (most recent call last):
+  File "/Users/liyizhou/.pyenv/versions/3.12.5/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liyizhou/.pyenv/versions/3.12.5/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liyizhou/.pyenv/versions/3.12.5/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liyizhou/.pyenv/versions/3.12.5/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liyizhou/Desktop/CS/ollama/stt2/start.py", line 149, in process
+    wav_name = request.form.get("wav_name").strip()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+2024-08-28 16:24:04,408 - start - ERROR - [app]start error:[Errno 48] Address already in use: ('10.168.1.224', 9977)

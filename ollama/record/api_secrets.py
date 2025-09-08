@@ -1,0 +1,1 @@
+API_KEY_ASSEMBLYAI = '4c60a4caf69c433faf15a950aeeb0dff'
